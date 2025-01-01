@@ -1,3 +1,5 @@
+.gitignore
+
 # ignore notebooks
 *.ipynb
 
@@ -13,4 +15,8 @@ geometries/
 # publish the working model
 /models/*
 !/models/8_8_8_grid_state_16_mod.pth
+
+# pycache
+/__pycache__
+
 

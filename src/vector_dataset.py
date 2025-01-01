@@ -8,7 +8,7 @@ class VectorDataset(Dataset):
         self 
     ):
         # load training vectors
-        self.data_array = np.load("A_matrix_8_8_8__training.npy")
+        self.data_array = np.load("../data/A_matrix_8_8_8__training.npy")
 
 
     def __len__(self):

@@ -4,8 +4,9 @@ import numpy as np
 import scipy
 import random
 import matplotlib.pyplot as plt
-from src.train import *
+from train import *
 import time
+import argparse
 
 
 def icholesky(A):
@@ -125,12 +126,19 @@ def neural_pgd(A, b:torch.Tensor, tol = 1e-16, max_it = 100):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--tol", dest = "tol", type = float, default = 1e-4)
+    parser.add_argument("-d", "--domain", dest = "domain_type", type = str, default = "empty")
+    parser.add_argument("-f", "--filling_fraction", dest = "filling_fraction", type = float, default = 0)
+    FLAGS, unparsed = parser.parse_known_args()
+    
+    
     dim_x, dim_y, dim_z = 8, 8, 8
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     torch.set_default_dtype(torch.double)
 
-    domain_type = "random"
-    filling_fraction = 0.35
+    domain_type = FLAGS.domain_type
+    filling_fraction = FLAGS.filling_fraction
     
     fn_map = {"cube" : {"data suffix" : "cube", 
                         "plot title":"PCG vs Neural Preconditioner for 8x8x8 Domain with Cube",
@@ -158,7 +166,7 @@ if __name__ == "__main__":
     plot_title = fn_map[domain_type]["plot title"]
     save_fn = fn_map[domain_type]["save name"]
 
-    models_dir = f"./models/"
+    models_dir = f"../models/"
     model_fn = "8_8_8_grid_state_16_mod.pth"
     
         
@@ -167,14 +175,14 @@ if __name__ == "__main__":
     model.eval()
     matrix_fn = f"A_matrix_8_8_8_{data_suffix}"
     # load A matrix, its stored as COO
-    A = scipy.sparse.load_npz(f"./data/{matrix_fn}.npz")
+    A = scipy.sparse.load_npz(f"../data/{matrix_fn}.npz")
     
     # generate a random test vector
-    vectors = np.load(f"./data/{matrix_fn}_data.npy")
+    vectors = np.load(f"../data/{matrix_fn}_data.npy")
     idx = random.randint(0,vectors.shape[0] - 1)
     b = vectors[idx,:]
     # find solution to desired tolerance
-    tol = 1e-8
+    tol = FLAGS.tol
     
 
     
@@ -183,7 +191,7 @@ if __name__ == "__main__":
     # create a preconditioner
     dA = A.toarray()
     dA = dA[A.getnnz(0) > 0,:]
-    dA = dA[:,A.getnnz(1)>0]
+    dA = dA[:,A.getnnz(1)> 0]
     db = b[A.getnnz(1) > 0]
     R = np.sqrt(dA.diagonal())
     R = scipy.sparse.diags(R).tocsc()
@@ -197,7 +205,7 @@ if __name__ == "__main__":
     err = np.linalg.norm(db - dA.dot(x))
     pgd_result_str = f"PCGD finished in {its} iterations with residual {err}. It took {time_taken/its} seconds per it."
     
-    ################ Benchmark ICPCGD
+    ################ Benchmark ICPGD
     # create a preconditioner
     R = icholesky(dA.copy())
 
@@ -211,7 +219,7 @@ if __name__ == "__main__":
 
 
 
-    ################ Benchmark Neural PCGD
+    ################ Benchmark Neural PGD
     # convert matrix to pytorch sparse format
     A = torch.sparse_coo_tensor(np.array([A.row, A.col]), A.data, size = [dim_x * dim_y * dim_z, dim_x * dim_y * dim_z])
     A = A.to(DEVICE, dtype=torch.double)
@@ -239,5 +247,5 @@ if __name__ == "__main__":
     plt.ylabel("Error")
     plt.xlabel("Iterations")
     plt.legend()
-    plt.savefig(f"./plots/{save_fn}")
+    plt.savefig(f"../plots/{save_fn}")
     plt.show()

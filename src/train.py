@@ -4,9 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import scipy.sparse
-import torchsummary
 
-from src.vector_dataset import *
+from vector_dataset import *
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
@@ -233,6 +232,10 @@ if __name__ == "__main__":
     # parse --demo flag, if not there FLAGS.demo == False
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--existing", action="store_true", default = False)
+    parser.add_argument("-b", "--batch", type = int, default = 4)
+    parser.add_argument("-c", "--epochs", type = int, default = 5)
+    parser.add_argument("-l", "--lr", type = float, default = 1e-4)
+
     FLAGS, unparsed = parser.parse_known_args()
 
     
@@ -240,8 +243,8 @@ if __name__ == "__main__":
     dim_x, dim_y, dim_z = 8, 8, 8
     
     # make models directory
-    if not os.path.exists("./models/"):
-        os.makedirs("./models/")
+    if not os.path.exists("../models/"):
+        os.makedirs("../models/")
     
     # define loss function
     loss_fn = cgd_loss_fn  # use paper defined loss
@@ -250,13 +253,14 @@ if __name__ == "__main__":
 
     # tweak these constants as you see fit, or get them through 'argparse'
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    BATCH_SIZE = 1200
-    EPOCHS = 5
+    BATCH_SIZE = FLAGS.batch
+    EPOCHS = FLAGS.epochs
+    LR = FLAGS.lr
 
     domain_name = f"A_matrix_{dim_x}_{dim_y}_{dim_z}_"
 
     dataset = VectorDataset()
-    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [0.95, 0.05]) 
+    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [0.8, 0.2]) 
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, num_workers=4, shuffle = True)
     test_dataloader =  DataLoader(test_dataset, batch_size=1, num_workers=4, shuffle = True)
     print("Dataset Loaded")
@@ -270,22 +274,15 @@ if __name__ == "__main__":
 
     torch.autograd.set_detect_anomaly(True)
 
-    # if(FLAGS.existing):
-    #     models_dir = f"./models/"
-    #     model_fn = "8_8_8_grid.pth"
-    #     model = torch.load(models_dir + model_fn).to(DEVICE)
-    # else:
-    #     model = CNN(dim_x, dim_y, dim_z).to(DEVICE)
-
     model = CNN(dim_x, dim_y, dim_z).to(DEVICE)
 
     if(FLAGS.existing):
-        models_dir = f"./models/"
-        model_fn = f"{dim_x}_{dim_y}_{dim_z}_grid_state_final_stg2.pth"
+        models_dir = f"../models/"
+        model_fn = f"{dim_x}_{dim_y}_{dim_z}_grid_state_16_mod.pth"
         model.load_state_dict(torch.load(models_dir + model_fn))
     
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, amsgrad = True, eps=1e-10)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LR, amsgrad = True, eps=1e-10)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=1)
     test_loss, train_loss = [], []
 
@@ -305,7 +302,7 @@ if __name__ == "__main__":
 
 
     # save the model
-    torch.save(model.state_dict(), f"./models/{dim_x}_{dim_y}_{dim_z}_grid_state_final_stg2.pth")
+    torch.save(model.state_dict(), f"../models/{dim_x}_{dim_y}_{dim_z}_grid_state_16_mod.pth")
     fig, axs = plt.subplots(1, 2, figsize=(15, 15))
     axs[0].plot(np.arange(1, len(train_loss) + 1), train_loss)
     axs[0].set_title("Train Loss")
@@ -317,4 +314,4 @@ if __name__ == "__main__":
     axs[1].set_xlabel("Epoch")
     axs[1].set_ylabel("Average Loss")
     plt.show()
-    fig.savefig("./test_train_loss.jpg")
+    fig.savefig("../plots/test_train_loss.jpg")

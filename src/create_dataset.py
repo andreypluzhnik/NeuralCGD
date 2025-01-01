@@ -1,5 +1,6 @@
 import numpy as np
 import argparse
+import matplotlib
 import matplotlib.pyplot as plt
 import scipy
 
@@ -21,7 +22,7 @@ def is_boundary(i, j, k): # check if cell belongs to the boundary
     return False
 
 
-def init_domain(boundary_type:str = "", filling_fraction:float = 0):
+def init_domain(domain_type:str = "", filling_fraction:float = 0):
     global domain
 
     filling_fraction = np.clip(filling_fraction, 0 ,1)
@@ -37,15 +38,15 @@ def init_domain(boundary_type:str = "", filling_fraction:float = 0):
             np.square(y - int(ly/2) + 1)))+ np.square(z - int(lz/2) + 1) <= 0.1 * np.sqrt(np.sum(np.square([lx,ly,lz])))
 
     # combine the objects into a single boolean array
-    if(boundary_type == "torus"):
+    if(domain_type == "torus"):
         domain = torus
-    elif(boundary_type == "sphere"):
+    elif(domain_type == "sphere"):
         domain = sphere
-    elif(boundary_type == "cube"):
+    elif(domain_type == "cube"):
         domain = cube
-    elif(boundary_type == "cube_small"):
+    elif(domain_type == "cube_small"):
         domain = cube_small
-    elif(boundary_type == "random"):
+    elif(domain_type == "random"):
         domain = np.zeros(lx * ly * lz)
 
         # Calculate the number of elements to fill
@@ -68,8 +69,8 @@ def init_domain(boundary_type:str = "", filling_fraction:float = 0):
     ax.voxels(domain, facecolors=colors, edgecolor='k')
 
     plt.show()
-    if(boundary_type != ""):
-        ax.get_figure().savefig(f"../geometries/{boundary_type}_boundary_{lx}_{ly}_{lz}.png")
+    if(domain_type != ""):
+        ax.get_figure().savefig(f"../geometries/{domain_type}_boundary_{lx}_{ly}_{lz}.png")
 
 
 def make_linear_system():
@@ -196,14 +197,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-t","--test", dest="train", action="store_false", default = True)
     parser.add_argument("-f","--fillfrac", dest="filling_fraction", type = float, default = 0)
-    parser.add_argument("-b", "--boundary", dest = "boundary_type", type = str, default = "")
+    parser.add_argument("-d", "--domain", dest = "domain_type", type = str, default = "")
 
     FLAGS, unparsed = parser.parse_known_args()
+    
     training = FLAGS.train
-    if(FLAGS.boundary_type == "random"):
-        FLAGS.boundary_type = FLAGS.boundary_type + "_ff_" + str(FLAGS.filling_fraction)
-    matrix_fn = f"A_matrix_{lx}_{ly}_{lz}_{FLAGS.boundary_type}"
-    init_domain(boundary_type = FLAGS.boundary_type, filling_fraction = FLAGS.filling_fraction)
+    if(FLAGS.domain_type == "random"):
+        FLAGS.domain_type = FLAGS.domain_type + "_ff_" + str(FLAGS.filling_fraction)
+    matrix_fn = f"A_matrix_{lx}_{ly}_{lz}_{FLAGS.domain_type}"
+    init_domain(domain_type = FLAGS.domain_type, filling_fraction = FLAGS.filling_fraction)
     make_linear_system()
 
 
