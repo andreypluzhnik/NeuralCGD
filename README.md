@@ -7,7 +7,7 @@ in the Conjugate Gradient Descent Method.
 Provided in `src/` are the training, evaluation and data creation codes while`models/` contains a ready to use model. 
 Training data is generated from matrices found in fluid flow problems that help solve for pressure of the fluid. 
 Running `src/create_dataset.py` creates a training dataset, adding `-t` as a command line argument marks the data for testing to be used by `src/eval.py`.
-A new model can be trained by running `train.py`.
+A new model can be trained up with `train.py`.
 
 ## Results
 The method holds up quite well for matrices of size 512x512 — it outperforms classical CGD up to a tested tolerance of `1e-8`
