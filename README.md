@@ -17,5 +17,5 @@ that the model lags behind classical methods.
 
 ![alt text](https://github.com/andreypluzhnik/NeuralCGD/blob/master/plots/random_it_plot.png)
 
-In the plot the solid lines correspond to the results the classical and neural preconditioners on randomized domains, 
+In the plot the solid lines correspond to the results of the classical and neural preconditioners on randomized domains, 
 whereas individual points are for specific domains. 
